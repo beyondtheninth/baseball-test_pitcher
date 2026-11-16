@@ -79,6 +79,10 @@ footer{text-align:center;color:#98a1aa;font-size:11px;margin-top:22px}
 .share-card-art{width:auto;max-width:90%;height:auto;max-height:220px;object-fit:contain}
 .share-card-description{font-size:12px;line-height:1.6}
 }
+
+/* 투수 BGM: 기존 버건디 테마 유지 */
+.bgm-toggle{position:fixed;right:18px;bottom:18px;z-index:1000;background:#a52b35;color:#fff;border:1px solid #d9b778;border-radius:999px;padding:12px 17px;font:800 13px "Pretendard",sans-serif;box-shadow:0 5px 18px #0003;cursor:pointer}
+.bgm-toggle:focus-visible{outline:3px solid #d9b778;outline-offset:3px}
 </style>
 </head>
 <body>
@@ -102,10 +106,35 @@ footer{text-align:center;color:#98a1aa;font-size:11px;margin-top:22px}
 <section class="result hidden" id="result"></section>
 <footer>이 테스트는 원활한 캐릭터 디자인을 위해 (제작자가 생각하는) 각 투수 역할의 스테레오타입을 기준으로 하였습니다.</footer>
 </div>
+
+<audio id="siteBgm" src="images/bgm.mp3" preload="none" loop></audio>
+<button type="button" id="bgmToggle" class="bgm-toggle" aria-pressed="false" onclick="toggleBgm()">♫ BGM OFF</button>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/dist/gifuct-js.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 <script>
+
+// 사용자의 입단하기 클릭 시 재생 시작. 브라우저 자동재생 제한 시 버튼으로 재시도 가능.
+const bgm = document.getElementById("siteBgm");
+bgm.volume = 0.35;
+function updateBgmButton(){
+  const active = !bgm.paused;
+  const btn = document.getElementById("bgmToggle");
+  btn.textContent = active ? "♫ BGM ON" : "♫ BGM OFF";
+  btn.setAttribute("aria-pressed", String(active));
+}
+async function startBgm(){
+  try { await bgm.play(); } catch(e) { /* 사용자가 BGM 버튼을 눌러 재시도 가능 */ }
+  updateBgmButton();
+}
+function toggleBgm(){
+  if(bgm.paused) startBgm();
+  else { bgm.pause(); updateBgmButton(); }
+}
+bgm.addEventListener("play", updateBgmButton);
+bgm.addEventListener("pause", updateBgmButton);
+bgm.addEventListener("error", updateBgmButton);
+
 // ─────────────────────────────────────────────
 // 편집 구역: 문항·선택지 문구와 투수 유형별 점수
 // 각 선택지는 의미에 맞는 주 포지션(+2), 보조 유형(+1)을 가집니다.
@@ -371,7 +400,7 @@ const QUESTIONS = [
 // ─────────────────────────────────────────────
 let current=0, answers=Array(QUESTIONS.length).fill(null);
 const $=id=>document.getElementById(id);
-function start(){$("intro").classList.add("hidden");$("quiz").classList.remove("hidden");render()}
+function start(){startBgm();$("intro").classList.add("hidden");$("quiz").classList.remove("hidden");render()}
 function render(){
  const q=QUESTIONS[current]; $("step").textContent=`QUESTION ${current+1} / ${QUESTIONS.length}`;
  $("progressText").textContent=`${Math.round((current+1)/QUESTIONS.length*100)}%`;
