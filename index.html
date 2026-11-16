@@ -83,6 +83,10 @@ footer{text-align:center;color:#98a1aa;font-size:11px;margin-top:22px}
 /* 투수 BGM: 기존 버건디 테마 유지 */
 .bgm-toggle{position:fixed;right:18px;bottom:18px;z-index:1000;background:#a52b35;color:#fff;border:1px solid #d9b778;border-radius:999px;padding:12px 17px;font:800 13px "Pretendard",sans-serif;box-shadow:0 5px 18px #0003;cursor:pointer}
 .bgm-toggle:focus-visible{outline:3px solid #d9b778;outline-offset:3px}
+/* 출처 표기 */
+footer .source-credit{display:block;margin-top:12px;font-size:12px;line-height:1.7}
+footer .source-credit a{color:var(--accent);font-weight:800;text-decoration:underline;text-underline-offset:3px}
+footer .source-credit a:hover{opacity:.75}
 </style>
 </head>
 <body>
@@ -104,7 +108,7 @@ footer{text-align:center;color:#98a1aa;font-size:11px;margin-top:22px}
 <div class="actions"><button class="btn secondary" id="prev" onclick="move(-1)">이전</button><button class="btn primary" id="next" onclick="move(1)" disabled>다음</button></div>
 </section>
 <section class="result hidden" id="result"></section>
-<footer>이 테스트는 원활한 캐릭터 디자인을 위해 (제작자가 생각하는) 각 투수 역할의 스테레오타입을 기준으로 하였습니다.</footer>
+<footer>이 테스트는 원활한 캐릭터 디자인을 위해 (제작자가 생각하는) 각 투수 역할의 스테레오타입을 기준으로 하였습니다.<span class="source-credit">출처: <a href="https://youtube.com/@ssglanders?si=PEyZrwfxMop9rb71" target="_blank" rel="noopener noreferrer">SSG 랜더스 공식 유튜브</a></span></footer>
 </div>
 
 <audio id="siteBgm" src="images/bgm.mp3" preload="none" loop></audio>
@@ -117,18 +121,33 @@ footer{text-align:center;color:#98a1aa;font-size:11px;margin-top:22px}
 // 사용자의 입단하기 클릭 시 재생 시작. 브라우저 자동재생 제한 시 버튼으로 재시도 가능.
 const bgm = document.getElementById("siteBgm");
 bgm.volume = 0.35;
+const bgmButton = document.getElementById("bgmToggle");
 function updateBgmButton(){
-  const active = !bgm.paused;
-  const btn = document.getElementById("bgmToggle");
-  btn.textContent = active ? "♫ BGM ON" : "♫ BGM OFF";
-  btn.setAttribute("aria-pressed", String(active));
+  const playing = !bgm.paused && !bgm.error;
+  bgmButton.textContent = playing ? "♫ BGM ON" : "♫ BGM OFF";
+  bgmButton.setAttribute("aria-pressed", String(playing));
+  bgmButton.setAttribute("aria-label", playing ? "배경음악 끄기" : "배경음악 켜기");
 }
-async function startBgm(){
-  try { await bgm.play(); } catch(e) { /* 사용자가 BGM 버튼을 눌러 재시도 가능 */ }
+function bgmErrorMessage(err){
+  const code = bgm.error?.code;
+  if(code === 4 || code === 2 || code === 3){
+    return "음악 파일을 불러오거나 재생하지 못했어!\nGitHub images 폴더에 bgm.mp3가 있는지, 파일 이름과 형식이 맞는지 확인해 줘.\n확인 주소: " + new URL("images/bgm.mp3", location.href).href;
+  }
+  if(err?.name === "NotAllowedError") return "브라우저에서 음악 재생을 차단했어. 크롬에서 사이트를 직접 열고 BGM ON을 다시 눌러 줘.";
+  return "음악을 재생할 수 없어. images/bgm.mp3 파일 업로드 여부를 확인해 줘.";
+}
+async function startBgm(showError = false){
+  try {
+    if(bgm.error) bgm.load();
+    await bgm.play();
+  } catch(err) {
+    if(showError) alert(bgmErrorMessage(err));
+  }
   updateBgmButton();
 }
+function tryPlayBgm(){ startBgm(false); }
 function toggleBgm(){
-  if(bgm.paused) startBgm();
+  if(bgm.paused) startBgm(true);
   else { bgm.pause(); updateBgmButton(); }
 }
 bgm.addEventListener("play", updateBgmButton);
